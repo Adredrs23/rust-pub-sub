@@ -1,182 +1,144 @@
-# Stock Ticker System Development Timeline
-
-This document outlines the key milestones and development steps that led to the current state of the Stock Ticker System.
+# Stock Ticker System Evolution Timeline
 
 ## Phase 1: Initial Setup and Basic Structure
 
 ### Milestone 1: Project Initialization
 
-- Created a new Rust project using `cargo new stock-ticker`
-- Set up the basic project structure with `src/main.rs`
-- Initialized Git repository for version control
+- Created new Rust project with `cargo new stock-ticker`
+- Set up basic project structure with `src` directory
+- Initialized Git repository with `.gitignore` for Rust projects
 
-### Milestone 2: Core Dependencies
+### Milestone 2: Core Dependencies Setup
 
-- Added essential dependencies to `Cargo.toml`:
-  - `tokio` for asynchronous runtime
+- Added key dependencies to `Cargo.toml`:
+  - `tokio` for async runtime
+  - `async-nats` for message broker
   - `serde` and `serde_json` for serialization
-  - `async-nats` for message broker integration
   - `chrono` for timestamp handling
   - `rand` for random price generation
+  - `axum` for HTTP API
+  - `reqwest` for HTTP client
+  - `sqlx` for database operations
+  - `tracing` for logging
 
 ## Phase 2: Publisher Implementation
 
 ### Milestone 3: Stock Price Data Structure
 
-- Created the `StockPrice` struct in `src/types.rs`:
-  ```rust
-  #[derive(Serialize, Deserialize, Debug)]
-  pub struct StockPrice {
-      pub symbol: String,
-      pub price: f64,
-      pub timestamp: String,
-  }
-  ```
-- Implemented serialization/deserialization for JSON format
+- Created `StockPrice` struct with `symbol`, `price`, and `timestamp` fields
+- Implemented serialization/deserialization with Serde
+- Added `Clone` trait to support data sharing
 
 ### Milestone 4: Publisher Service
 
-- Implemented the publisher binary in `src/bin/publisher.rs`
-- Added functionality to:
-  - Connect to NATS server
-  - Generate random stock prices for predefined symbols
-  - Publish prices to the "stock_prices" topic
-  - Run in an infinite loop with a delay between updates
+- Implemented publisher service in `src/bin/publisher.rs`
+- Set up NATS connection and topic publishing
+- Created random price generation logic
+- Implemented continuous publishing loop with 2-second intervals
 
 ## Phase 3: Consumer Implementation
 
 ### Milestone 5: Consumer Service
 
-- Implemented the consumer binary in `src/bin/consumer.rs`
-- Added functionality to:
-  - Connect to NATS server
-  - Subscribe to the "stock_prices" topic
-  - Deserialize and process incoming stock price updates
-  - Display the received data in the console
+- Implemented consumer service in `src/bin/consumer.rs`
+- Set up NATS subscription to "stock_prices" topic
+- Added message deserialization and display logic
+- Implemented error handling for message processing
 
 ## Phase 4: Authentication Service
 
-### Milestone 6: Authentication Service Setup
+### Milestone 6: Auth Service Setup
 
-- Added Axum web framework dependency to `Cargo.toml`
-- Created the authentication service binary in `src/bin/auth_service.rs`
-- Implemented basic HTTP server with Axum
+- Created authentication service in `src/bin/auth_service.rs`
+- Implemented `AppState` struct with thread-safe storage for authorized emails
+- Set up Axum web server with routes for registration and authorization
 
-### Milestone 7: Authentication Endpoints
+### Milestone 7: Auth Service Endpoints
 
-- Implemented the `/register` endpoint for adding authorized emails
-- Implemented the `/is-authorized` endpoint for checking authorization
-- Added thread-safe state management using `Arc<Mutex<>>`
-
-### Milestone 8: Consumer Authentication Integration
-
-- Updated the consumer to require an email parameter
-- Added authentication check before connecting to NATS
-- Implemented error handling for unauthorized access
-
-### Milestone 9: List Emails Endpoint
-
-- Added the `/list-emails` endpoint to the authentication service
-- Implemented functionality to return all authorized emails
+- Added `/register` endpoint for email registration
+- Implemented `/is-authorized` endpoint for authorization checks
+- Added `/list-emails` endpoint to view all authorized emails
+- Integrated authorization checks with consumer and aggregator services
 
 ## Phase 5: Project Structure Refinement
 
-### Milestone 10: Library Crate Implementation
+### Milestone 8: Library Crate Implementation
 
-- Created `src/lib.rs` to serve as the library crate entry point
-- Moved shared code (like `StockPrice` struct) to the library crate
-- Updated `Cargo.toml` to include the library crate configuration:
-  ```toml
-  [lib]
-  name = "stock_ticker"
-  path = "src/lib.rs"
-  ```
+- Created `src/lib.rs` to define the library crate
+- Moved shared types to `src/types.rs`
+- Updated import paths in all binaries to use the library crate
 
-### Milestone 11: Binary Target Configuration
+### Milestone 9: Binary Target Configuration
 
-- Updated `Cargo.toml` to properly define binary targets:
+- Updated `Cargo.toml` to define binary targets:
+  - `publisher` → `src/bin/publisher.rs`
+  - `consumer` → `src/bin/consumer.rs`
+  - `auth_service` → `src/bin/auth_service.rs`
+  - `aggregator` → `src/bin/aggregator.rs`
 
-  ```toml
-  [[bin]]
-  name = "publisher"
-  path = "src/bin/publisher.rs"
+## Phase 6: Aggregator Service Implementation
 
-  [[bin]]
-  name = "consumer"
-  path = "src/bin/consumer.rs"
+### Milestone 10: Aggregator Service
 
-  [[bin]]
-  name = "auth_service"
-  path = "src/bin/auth_service.rs"
-  ```
+- Created aggregator service in `src/bin/aggregator.rs`
+- Implemented `AggregatedStats` struct for statistical data
+- Created `AggregatedState` struct for thread-safe state management
+- Set up NATS subscription to collect stock price data
+- Implemented statistical calculations for each stock symbol
 
-### Milestone 12: Import Path Refinement
+### Milestone 11: Aggregator API Endpoints
 
-- Updated import paths in binaries to use the library crate:
-  ```rust
-  use stock_ticker::types::StockPrice;
-  ```
-- Removed redundant module declarations
+- Added REST API endpoints:
+  - `/aggregate` for all statistics
+  - `/raw` for all raw data
+  - `/aggregate/{symbol}` for symbol-specific statistics
+  - `/raw/{symbol}` for symbol-specific raw data
+- Integrated authorization checks with the auth service
 
-## Phase 6: Documentation
+## Phase 7: Documentation
 
-### Milestone 13: README Creation
+### Milestone 12: README Creation
 
 - Created comprehensive README.md with:
   - System architecture overview
+  - Project structure explanation
   - Component descriptions
   - Running instructions
   - Future enhancement ideas
 
-### Milestone 14: Authentication Service Documentation
+### Milestone 13: Component Documentation
 
-- Created detailed documentation for the authentication service in `docs/auth_service.md`
-- Included API endpoints, data structures, and usage examples
-
-### Milestone 15: Timeline Documentation
-
-- Created this timeline document to track the project's evolution
+- Created detailed documentation for each component:
+  - `docs/publisher.md` for publisher service
+  - `docs/consumer.md` for consumer service
+  - `docs/auth_service.md` for authentication service
+  - `docs/aggregator.md` for aggregator service
 
 ## Current State
 
-The Stock Ticker System now consists of three main components:
+The Stock Ticker System now consists of four main components:
 
-1. **Publisher**: Generates and publishes simulated stock prices to NATS
-2. **Consumer**: Subscribes to stock prices and displays them (with authentication)
-3. **Authentication Service**: Manages user authorization through a REST API
+1. **Publisher**: Generates and publishes simulated stock prices
+2. **Consumer**: Subscribes to and displays stock price updates
+3. **Authentication Service**: Manages user authorization
+4. **Aggregator Service**: Collects, processes, and provides access to aggregated data
 
-The project follows a well-structured organization with:
+The system features:
 
-- A library crate for shared code
-- Multiple binary targets for different services
+- Centralized authorization through the auth service
+- Real-time data distribution with NATS
+- Statistical aggregation of stock prices
+- REST API for data access
+- Thread-safe state management
 - Comprehensive documentation
 
 ## Next Steps
 
 Future development will focus on:
 
-1. **Enhanced Authentication**:
-
-   - Password-based authentication
-   - JWT token implementation
-   - Session management
-
-2. **Data Persistence**:
-
-   - Database integration for storing historical prices
-   - Persistent storage for authorized users
-
-3. **User Interface**:
-
-   - Web interface for real-time visualization
-   - User management dashboard
-
-4. **Security Enhancements**:
-
-   - HTTPS support
-   - Rate limiting
-   - Input sanitization
-
-5. **Error Handling**:
-   - Improved error handling throughout the system
-   - Logging and monitoring
+1. Enhanced authentication with passwords and JWT tokens
+2. Data persistence with database integration
+3. User interface improvements for data visualization
+4. Security enhancements for production deployment
+5. Better error handling and recovery mechanisms
+6. Advanced analytics and forecasting capabilities
