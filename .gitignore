@@ -1,0 +1,29 @@
+# Generated files
+/target/
+**/*.rs.bk
+Cargo.lock
+
+# Only ignore Cargo.lock for libraries
+# If you're building an executable, keep Cargo.lock in version control
+# See https://doc.rust-lang.org/cargo/guide/cargo-toml-vs-cargo-lock.html
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Debug files
+*.pdb
+
+# Environment files
+.env
+.env.local
+
+# Build output
+/build/
+/dist/
+
+# System files
+.DS_Store
+Thumbs.db
