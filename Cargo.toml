@@ -15,6 +15,10 @@ path = "src/bin/consumer.rs"
 name = "auth_service"
 path = "src/bin/auth_service.rs"
 
+[[bin]]
+name = "aggregator"
+path = "src/bin/aggregator.rs"
+
 [dependencies]
 async-nats = "0.39.0"
 axum = { version = "0.8.1", features = ["macros"] }
