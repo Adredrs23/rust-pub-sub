@@ -5,8 +5,7 @@ use rand::rng;
 use serde_json;
 use tokio::time::{Duration, sleep};
 
-mod types;
-use types::StockPrice;
+use stock_ticker::types::StockPrice;
 
 async fn generate_random_price() -> f64 {
     let mut rng = rng();

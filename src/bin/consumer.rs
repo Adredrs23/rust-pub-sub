@@ -1,12 +1,31 @@
 use async_nats::ConnectOptions;
 use futures::StreamExt;
+use reqwest;
 use serde_json;
+use std::env;
 
-mod types;
-use types::StockPrice;
+use stock_ticker::types::StockPrice;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let args: Vec<String> = env::args().collect();
+    if args.len() < 2 {
+        eprintln!("Usage: consumer <email>");
+        return Ok(());
+    }
+
+    let email = &args[1];
+    let auth_url = format!("http://localhost:3001/is-authorized?email={}", email);
+
+    let res = reqwest::get(&auth_url).await?.json::<bool>().await?;
+
+    if !res {
+        println!("❌ Access denied for {}", email);
+        return Ok(());
+    }
+
+    println!("✅ Access granted. Connecting to NATS...");
+
     // Connect to the NATS server asynchronously
     let client = ConnectOptions::new()
         .connect("nats://127.0.0.1:4222")

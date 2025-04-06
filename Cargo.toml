@@ -5,15 +5,19 @@ edition = "2024"
 
 [[bin]]
 name = "publisher"
-path = "src/publisher.rs"
+path = "src/bin/publisher.rs"
 
 [[bin]]
 name = "consumer"
-path = "src/consumer.rs"
+path = "src/bin/consumer.rs"
+
+[[bin]]
+name = "auth_service"
+path = "src/bin/auth_service.rs"
 
 [dependencies]
 async-nats = "0.39.0"
-axum = "0.8.1"
+axum = { version = "0.8.1", features = ["macros"] }
 chrono = "0.4.40"
 futures = "0.3.30"
 rand = "0.9.0"
@@ -24,3 +28,7 @@ sqlx = { version = "0.8.3", features = ["postgres", "runtime-tokio-native-tls"] 
 tokio = { version = "1.44.0", features = ["full"] }
 tracing = "0.1.41"
 tracing-subscriber = "0.3.19"
+
+[lib]
+name = "stock_ticker"
+path = "src/lib.rs"

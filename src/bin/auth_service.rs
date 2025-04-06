@@ -2,6 +2,7 @@ use axum::extract::Query;
 use axum::{
     Router,
     extract::Json,
+    extract::State,
     routing::{get, post},
 };
 use serde::{Deserialize, Serialize};
@@ -30,19 +31,21 @@ async fn main() {
     let app = Router::new()
         .route("/register", post(register))
         .route("/is-authorized", get(is_authorized))
+        .route("/list-emails", get(list_emails))
         .with_state(state);
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3001));
     println!("🔐 Auth service running on http://{}", addr);
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
-        .await
-        .unwrap();
+
+    // Updated server binding code for axum 0.8.1
+    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+    println!("Listening on {}", addr);
+    axum::serve(listener, app).await.unwrap();
 }
 
 async fn register(
+    State(state): State<AppState>,
     Json(payload): Json<Registration>,
-    axum::extract::State(state): axum::extract::State<AppState>,
 ) -> &'static str {
     let mut auth_list = state.authorized_emails.lock().unwrap();
     auth_list.insert(payload.email);
@@ -50,9 +53,14 @@ async fn register(
 }
 
 async fn is_authorized(
+    State(state): State<AppState>,
     Query(params): Query<Registration>,
-    axum::extract::State(state): axum::extract::State<AppState>,
 ) -> Json<bool> {
     let auth_list = state.authorized_emails.lock().unwrap();
     Json(auth_list.contains(&params.email))
+}
+
+async fn list_emails(State(state): State<AppState>) -> Json<Vec<String>> {
+    let auth_list = state.authorized_emails.lock().unwrap();
+    Json(auth_list.iter().cloned().collect())
 }
