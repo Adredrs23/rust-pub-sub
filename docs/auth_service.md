@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Authentication Service is a simple HTTP server that manages user authorization through email addresses. It provides endpoints for registering new users and checking their authorization status. This service is designed to be lightweight, fast, and thread-safe, making it suitable for integration with other components of the stock ticker system.
+The Authentication Service is a simple HTTP server that manages user authorization through email addresses. It provides endpoints for registering new users, checking their authorization status, and listing all authorized emails. This service is designed to be lightweight, fast, and thread-safe, making it suitable for integration with other components of the stock ticker system.
 
 ## Project Structure
 
@@ -62,7 +62,7 @@ This configuration allows each binary to be run independently while sharing code
 The service follows a simple architecture:
 
 1. **In-Memory Storage**: Uses a thread-safe HashSet to store authorized email addresses
-2. **HTTP API**: Exposes two endpoints for registration and authorization checks
+2. **HTTP API**: Exposes three endpoints for registration, authorization checks, and listing emails
 3. **State Management**: Shares state across all requests using Axum's state management
 
 ## Data Structures
@@ -140,6 +140,20 @@ This struct holds the application-wide state:
   }
   ```
 
+### 3. List Authorized Emails
+
+- **Endpoint**: `/list-emails`
+- **Method**: GET
+- **Response**: Array of email strings (as JSON)
+- **Description**: Returns a list of all authorized email addresses
+- **Handler Function**:
+  ```rust
+  async fn list_emails(State(state): State<AppState>) -> Json<Vec<String>> {
+      let auth_list = state.authorized_emails.lock().unwrap();
+      Json(auth_list.iter().cloned().collect())
+  }
+  ```
+
 ## Server Configuration
 
 - **Host**: 127.0.0.1
@@ -165,6 +179,14 @@ This struct holds the application-wide state:
 4. Server checks if the email exists in the HashSet
 5. Server releases the lock
 6. Server returns a JSON response with the result (true/false)
+
+### List Emails Flow
+
+1. Client sends a GET request to `/list-emails`
+2. Server acquires a lock on the authorized emails HashSet
+3. Server clones all emails from the HashSet into a new vector
+4. Server releases the lock
+5. Server returns a JSON response with the vector of emails
 
 ## Usage Examples
 
@@ -192,6 +214,18 @@ Expected response:
 
 ```json
 true
+```
+
+### Listing Authorized Emails
+
+```bash
+curl "http://127.0.0.1:3001/list-emails"
+```
+
+Expected response:
+
+```json
+["user@example.com", "another@example.com"]
 ```
 
 ## Thread Safety
