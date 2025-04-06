@@ -4,6 +4,22 @@
 
 The Aggregator Service is a component of the Stock Ticker System that collects, processes, and provides access to aggregated stock price data. It subscribes to the same NATS topic as the consumer but instead of just displaying the data, it maintains in-memory statistics and historical data for each stock symbol. The service exposes a REST API that allows clients to retrieve both raw and aggregated data.
 
+## Authentication
+
+The Aggregator Service integrates with the Authentication Service to ensure that only authorized users can access the data. When starting the service, it requires an email parameter that is verified against the auth service:
+
+```bash
+cargo run --bin aggregator user@example.com
+```
+
+The service will:
+
+1. Check if the provided email is authorized by making a request to the auth service
+2. Only start if the email is authorized
+3. Display an error message and exit if the email is not authorized
+
+This approach centralizes authorization logic in the auth service, making it consistent across all components of the system.
+
 ## Architecture
 
 The Aggregator Service follows a dual-purpose architecture:
@@ -148,6 +164,13 @@ For each stock price update, the service:
 
 ## Usage Examples
 
+### Starting the Service
+
+```bash
+# Start the aggregator service with an authorized email
+cargo run --bin aggregator user@example.com
+```
+
 ### Getting Aggregated Statistics
 
 ```bash
@@ -255,6 +278,7 @@ The service uses Rust's Result type for error handling:
 1. **Lock Errors**: Uses `unwrap()` on mutex locks (could be improved with proper error handling)
 2. **Deserialization Errors**: Handled by pattern matching on the result
 3. **Server Errors**: Uses `?` operator for propagating errors
+4. **Authentication Errors**: Checks authorization at startup and exits if not authorized
 
 ## Dependencies
 
@@ -263,14 +287,15 @@ The service uses Rust's Result type for error handling:
 async-nats = "0.39.0"
 axum = { version = "0.8.1", features = ["macros"] }
 futures = "0.3.30"
+reqwest = { version = "0.12.12", features = ["json"] }
 tokio = { version = "1.44.0", features = ["full"] }
 ```
 
 ## Running the Service
 
 ```bash
-# Start the aggregator service
-cargo run --bin aggregator
+# Start the aggregator service with an authorized email
+cargo run --bin aggregator user@example.com
 ```
 
 ## Integration with Stock Ticker System
@@ -280,6 +305,7 @@ The aggregator service can be integrated with the stock ticker system to:
 1. **Data Analysis**: Provide statistical insights into stock price movements
 2. **Historical Data**: Maintain a history of stock prices for analysis
 3. **API Access**: Allow other services to retrieve stock data through a REST API
+4. **Authorization**: Ensure only authorized users can access the data
 
 ## Future Improvements
 
@@ -301,4 +327,4 @@ The aggregator service can be integrated with the stock ticker system to:
 4. **API Enhancements**
    - Add filtering and pagination for large datasets
    - Implement WebSocket for real-time updates
-   - Add authentication for API access
+   - Add per-endpoint authentication for more granular access control

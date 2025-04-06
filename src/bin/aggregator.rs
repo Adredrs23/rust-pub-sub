@@ -2,12 +2,31 @@ use async_nats::ConnectOptions;
 use axum::extract::Path;
 use axum::{Json, Router, extract::State, routing::get};
 use futures::StreamExt;
-use std::{collections::HashMap, net::SocketAddr};
+use reqwest;
+use std::{collections::HashMap, env, net::SocketAddr};
 use stock_ticker::types::{AggregatedState, AggregatedStats, StockPrice};
 use tokio::task;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let args: Vec<String> = env::args().collect();
+    if args.len() < 2 {
+        eprintln!("Usage: aggregator <email>");
+        return Ok(());
+    }
+
+    let email = &args[1];
+    let auth_url = format!("http://localhost:3001/is-authorized?email={}", email);
+
+    let res = reqwest::get(&auth_url).await?.json::<bool>().await?;
+
+    if !res {
+        eprintln!("❌ Access denied for {}", email);
+        return Ok(());
+    }
+
+    println!("✅ Access granted. Starting aggregator service...");
+
     let state = AggregatedState::default();
 
     // Spawn listener
